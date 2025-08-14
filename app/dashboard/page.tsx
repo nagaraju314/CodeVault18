@@ -7,10 +7,15 @@ import type { Snippet } from "@/types/snippet";
 import { redirect } from "next/navigation";
 
 async function getUserSnippets(userId: string): Promise<Snippet[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
+  }
+
   const res = await fetch(`${baseUrl}/api/snippets?authorId=${userId}`, {
     cache: "no-store",
   });
+
   if (!res.ok) return [];
   return res.json();
 }

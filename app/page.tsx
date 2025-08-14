@@ -5,10 +5,12 @@ import { authOptions } from "@/lib/authOptions";
 import type { Snippet } from "@/types/snippet";
 
 async function getSnippets(q?: string): Promise<Snippet[]> {
-  // ✅ Removed hardcoded localhost
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
-  const url = new URL(`/api/snippets`, baseUrl || undefined);
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
+  }
 
+  const url = new URL(`${baseUrl}/api/snippets`);
   if (q) url.searchParams.set("q", q);
 
   const res = await fetch(url.toString(), { cache: "no-store" });
