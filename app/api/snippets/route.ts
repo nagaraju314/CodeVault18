@@ -4,6 +4,7 @@ import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
+import type { Prisma } from "@prisma/client";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -40,13 +41,12 @@ export async function GET(req: Request) {
     const q = searchParams.get("q")?.trim();
     const authorId = searchParams.get("authorId")?.trim();
 
-    // Build filter
-    const where: any = {};
+    const where: Prisma.SnippetWhereInput = {};
     if (q) {
       where.OR = [
-        { title: { contains: q, mode: "insensitive" as const } },
-        { code: { contains: q, mode: "insensitive" as const } },
-        { language: { contains: q, mode: "insensitive" as const } },
+        { title: { contains: q, mode: "insensitive" } },
+        { code: { contains: q, mode: "insensitive" } },
+        { language: { contains: q, mode: "insensitive" } },
         { tags: { has: q } },
       ];
     }
@@ -61,7 +61,6 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // Resolve minimal author info from Mongo users collection
     const authorIds = [
       ...new Set(snippets.map((s) => s.authorId).filter((id): id is string => Boolean(id))),
     ];
@@ -74,7 +73,7 @@ export async function GET(req: Request) {
       .find({
         _id: {
           $in: authorIds
-            .filter((id): id is string => ObjectId.isValid(id))
+            .filter((id) => ObjectId.isValid(id))
             .map((id) => new ObjectId(id)),
         },
       })
