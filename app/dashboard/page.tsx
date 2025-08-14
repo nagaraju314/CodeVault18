@@ -1,12 +1,12 @@
-// app/dashboard/page.tsx
-
 import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SnippetCard } from "@/components/snippets/SnippetCard";
+import type { Snippet } from "@/types/snippet";
+import { redirect } from "next/navigation";
 
-async function getUserSnippets(userId: string) {
+async function getUserSnippets(userId: string): Promise<Snippet[]> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   const res = await fetch(`${baseUrl}/api/snippets?authorId=${userId}`, {
     cache: "no-store",
@@ -19,7 +19,7 @@ export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return <p>Not logged in</p>;
+    redirect(`/login?callbackUrl=/dashboard`);
   }
 
   const userId = session.user.id;
@@ -44,7 +44,7 @@ export default async function DashboardPage() {
         <p>No snippets yet.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {snippets.map((snippet: any) => (
+          {snippets.map((snippet: Snippet) => (
             <SnippetCard
               key={snippet.id}
               snippet={snippet}

@@ -4,9 +4,10 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 export default function CreateSnippetPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
 
   const [form, setForm] = useState({
@@ -15,10 +16,8 @@ export default function CreateSnippetPage() {
     language: "",
     tags: "",
   });
-
   const [error, setError] = useState("");
 
-  // Redirect to login if not logged in
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login?callbackUrl=/dashboard/create");
@@ -53,21 +52,27 @@ export default function CreateSnippetPage() {
         setError(data.error || "Failed to create snippet");
         return;
       }
-
       router.push("/dashboard");
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
     }
   };
 
-  if (status === "loading") {
-    return <p className="p-6">Loading...</p>;
-  }
+  if (status === "loading") return <p className="p-6">Loading...</p>;
 
   return (
-    <div className="p-6 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Create Snippet</h1>
+    <div className="p-6 max-w-lg mx-auto relative">
+      {/* X Button in the top-right corner */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-4 right-4"
+        onClick={() => router.push("/dashboard")}
+      >
+        <X className="h-5 w-5" />
+      </Button>
 
+      <h1 className="text-2xl font-bold mb-4">Create Snippet</h1>
       {error && <p className="mb-4 text-red-600">{error}</p>}
 
       <form onSubmit={submitSnippet} className="space-y-4">
@@ -79,7 +84,6 @@ export default function CreateSnippetPage() {
           required
           className="w-full border p-2 rounded"
         />
-
         <textarea
           name="code"
           value={form.code}
@@ -89,7 +93,6 @@ export default function CreateSnippetPage() {
           required
           className="w-full border p-2 rounded font-mono"
         />
-
         <input
           name="language"
           value={form.language}
@@ -98,7 +101,6 @@ export default function CreateSnippetPage() {
           required
           className="w-full border p-2 rounded"
         />
-
         <input
           name="tags"
           value={form.tags}
@@ -106,7 +108,6 @@ export default function CreateSnippetPage() {
           placeholder="Tags (comma separated)"
           className="w-full border p-2 rounded"
         />
-
         <Button type="submit" className="w-full">
           Create Snippet
         </Button>

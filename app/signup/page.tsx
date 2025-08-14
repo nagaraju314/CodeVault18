@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button"; // shadcn button
-import { FaGoogle, FaGithub } from "react-icons/fa";
-import { signIn } from "next-auth/react";
 
 export default function SignupPage() {
   const router = useRouter();

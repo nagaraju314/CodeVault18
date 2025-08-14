@@ -1,4 +1,3 @@
-// components/snippets/LikeButton.tsx
 "use client";
 
 import { useState, useTransition } from "react";
@@ -31,7 +30,7 @@ export default function LikeButton({
       disabled={isPending}
       className={isLiked ? "text-red-500" : "text-gray-500"}
     >
-      {isLiked ? "❤️" : "🤍"} {likes}
+      {isLiked ? "❤" : "🤍"} {likes}
     </button>
   );
 }

@@ -1,4 +1,3 @@
-// components/snippets/SnippetCard.tsx
 "use client";
 
 import {
@@ -22,23 +21,24 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import type { Snippet, Comment } from "@/types/snippet";
 
 export function SnippetCard({
   snippet,
   currentUserId,
 }: {
-  snippet: any;
+  snippet: Snippet;
   currentUserId?: string;
 }) {
-  const userLiked = snippet.likes?.some((l: any) => l.userId === currentUserId);
+  const userLiked = snippet.likes?.some((l) => l.userId === currentUserId);
   const [isLiked, setIsLiked] = useState<boolean>(!!userLiked);
   const [likesCount, setLikesCount] = useState<number>(
     snippet.likes?.length || 0
   );
 
   const [open, setOpen] = useState(false);
-  const [comment, setComment] = useState("");
-  const [comments, setComments] = useState<any[]>(snippet.comments || []);
+  const [comment, setComment] = useState<string>("");
+  const [comments, setComments] = useState<Comment[]>(snippet.comments || []);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +47,7 @@ export function SnippetCard({
     const res = await fetch(`/api/snippets/${snippet.id}/like`, { method });
     if (res.ok) {
       setIsLiked(!isLiked);
-      setLikesCount((prev: number) => prev + (isLiked ? -1 : 1));
+      setLikesCount((prev) => prev + (isLiked ? -1 : 1));
     }
   };
 
@@ -64,10 +64,11 @@ export function SnippetCard({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || "Failed to post comment");
+        setError(
+          (data as { error?: string }).error || "Failed to post comment"
+        );
       } else {
-        // Optimistic refresh: prepend to list
-        const newItem = {
+        const newItem: Comment = {
           id: `temp-${Date.now()}`,
           content: comment.trim(),
           createdAt: new Date().toISOString(),
@@ -100,12 +101,11 @@ export function SnippetCard({
           <p className="text-sm text-gray-600">{snippet.tags.join(", ")}</p>
         )}
 
-        {/* Latest 3 comments */}
         {previewComments.length > 0 ? (
           <div className="space-y-2">
             <p className="text-xs font-medium text-gray-500">Recent comments</p>
             <ul className="space-y-2">
-              {previewComments.map((c: any) => (
+              {previewComments.map((c) => (
                 <li key={c.id} className="text-sm">
                   <span className="font-medium">
                     {c.author?.name ?? "Anonymous"}:

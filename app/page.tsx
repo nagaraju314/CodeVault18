@@ -1,10 +1,10 @@
-// app/page.tsx
 import Hero from "@/components/general/Hero";
 import { SnippetCard } from "@/components/snippets/SnippetCard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./api/auth/[...nextauth]/route";
+import type { Snippet } from "@/types/snippet";
 
-async function getSnippets(q?: string) {
+async function getSnippets(q?: string): Promise<Snippet[]> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   const url = new URL(`${baseUrl}/api/snippets`);
   if (q) url.searchParams.set("q", q);
@@ -26,7 +26,7 @@ export default async function Home({
       <Hero />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
         {snippets.length > 0 ? (
-          snippets.map((snippet: any) => (
+          snippets.map((snippet: Snippet) => (
             <SnippetCard
               key={snippet.id}
               snippet={snippet}

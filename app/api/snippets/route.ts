@@ -1,4 +1,3 @@
-// app/api/snippets/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import clientPromise from "@/lib/mongodb";
@@ -6,7 +5,6 @@ import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 
-// CREATE snippet (requires login)
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -15,7 +13,6 @@ export async function POST(req: Request) {
 
   try {
     const { title, code, language, tags } = await req.json();
-
     if (!title || !code || !language) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
@@ -37,26 +34,26 @@ export async function POST(req: Request) {
   }
 }
 
-// GET all snippets or search
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q")?.trim();
+    const authorId = searchParams.get("authorId")?.trim();
 
-    // Build Prisma search filter if q exists
-    const where = q
-      ? {
-          OR: [
-            { title: { contains: q, mode: "insensitive" as const } },
-            { code: { contains: q, mode: "insensitive" as const } },
-            { language: { contains: q, mode: "insensitive" as const } },
-            { tags: { has: q } },
-          ],
-        }
-      : undefined;
+    // Build filter
+    const where: any = {};
+    if (q) {
+      where.OR = [
+        { title: { contains: q, mode: "insensitive" as const } },
+        { code: { contains: q, mode: "insensitive" as const } },
+        { language: { contains: q, mode: "insensitive" as const } },
+        { tags: { has: q } },
+      ];
+    }
+    if (authorId) where.authorId = authorId;
 
     const snippets = await prisma.snippet.findMany({
-      where,
+      where: Object.keys(where).length ? where : undefined,
       include: {
         likes: { select: { userId: true } },
         comments: { orderBy: { createdAt: "desc" } },
@@ -64,7 +61,7 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // Extract authorIds & ensure they are valid ObjectIds
+    // Resolve minimal author info from Mongo users collection
     const authorIds = [
       ...new Set(snippets.map((s) => s.authorId).filter((id): id is string => Boolean(id))),
     ];
@@ -84,7 +81,6 @@ export async function GET(req: Request) {
       .project({ _id: 1, name: 1, email: 1 })
       .toArray();
 
-    // Attach author info to snippets
     const snippetsWithAuthors = snippets.map((s) => ({
       ...s,
       author: s.authorId

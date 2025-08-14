@@ -1,4 +1,3 @@
-// app/snippets/[id]/SnippetViewer.tsx
 "use client";
 
 import { useState } from "react";
@@ -8,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { CopyButton } from "./CopyButton";
 import { Textarea } from "@/components/ui/textarea";
+import type { Snippet, Comment } from "@/types/snippet";
 
-export function SnippetViewer({ snippet }: { snippet: any }) {
+export function SnippetViewer({ snippet }: { snippet: Snippet }) {
   const router = useRouter();
-  const [comments, setComments] = useState<any[]>(snippet.comments || []);
-  const [content, setContent] = useState("");
+  const [comments, setComments] = useState<Comment[]>(snippet.comments || []);
+  const [content, setContent] = useState<string>("");
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,9 +28,9 @@ export function SnippetViewer({ snippet }: { snippet: any }) {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || "Failed to add comment");
+        setError((data as { error?: string }).error || "Failed to add comment");
       } else {
-        const newItem = {
+        const newItem: Comment = {
           id: `temp-${Date.now()}`,
           content: content.trim(),
           createdAt: new Date().toISOString(),
@@ -49,7 +49,6 @@ export function SnippetViewer({ snippet }: { snippet: any }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-green-100 flex justify-center p-6">
       <Card className="w-full max-w-4xl shadow-lg rounded-2xl border border-gray-200 overflow-hidden">
-        {/* Header */}
         <CardHeader className="flex justify-between items-center border-b pb-3 bg-white">
           <div className="flex items-center gap-2">
             <Button
@@ -63,7 +62,6 @@ export function SnippetViewer({ snippet }: { snippet: any }) {
           </div>
         </CardHeader>
 
-        {/* Body */}
         <CardContent className="space-y-4 mt-2">
           <div className="text-gray-700 text-sm">
             <div>
@@ -88,7 +86,6 @@ export function SnippetViewer({ snippet }: { snippet: any }) {
             <CopyButton code={snippet.code} />
           </div>
 
-          {/* Comments */}
           <section className="space-y-3">
             <h3 className="font-semibold">Comments</h3>
             <div className="space-y-3">
