@@ -1,0 +1,58 @@
+// app/dashboard/page.tsx
+
+import { getServerSession } from "next-auth";
+import { authOptions } from "../api/auth/[...nextauth]/route";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { SnippetCard } from "@/components/snippets/SnippetCard";
+
+async function getUserSnippets(userId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const res = await fetch(`${baseUrl}/api/snippets?authorId=${userId}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export default async function DashboardPage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return <p>Not logged in</p>;
+  }
+
+  const userId = session.user.id;
+  const snippets = await getUserSnippets(userId);
+
+  return (
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">My Snippets</h1>
+        <Link href="/dashboard/create">
+          <Button>Create Snippet</Button>
+        </Link>
+      </div>
+
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl text-gray-500 mb-2">
+          Welcome back, {session.user.name || "Developer"}!
+        </h2>
+      </div>
+
+      {snippets.length === 0 ? (
+        <p>No snippets yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {snippets.map((snippet: any) => (
+            <SnippetCard
+              key={snippet.id}
+              snippet={snippet}
+              currentUserId={userId}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
