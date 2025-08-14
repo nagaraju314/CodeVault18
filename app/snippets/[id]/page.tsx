@@ -7,7 +7,7 @@ export default async function SnippetDetailPage(props: {
   const { id } = await props.params;
   const cookieStore = await cookies();
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
 
   const res = await fetch(`${baseUrl}/api/snippets/${id}`, {
     cache: "no-store",

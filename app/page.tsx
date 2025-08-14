@@ -5,9 +5,12 @@ import { authOptions } from "@/lib/authOptions";
 import type { Snippet } from "@/types/snippet";
 
 async function getSnippets(q?: string): Promise<Snippet[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const url = new URL(`${baseUrl}/api/snippets`);
+  // ✅ Removed hardcoded localhost
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
+  const url = new URL(`/api/snippets`, baseUrl || undefined);
+
   if (q) url.searchParams.set("q", q);
+
   const res = await fetch(url.toString(), { cache: "no-store" });
   return res.ok ? res.json() : [];
 }
