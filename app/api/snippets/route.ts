@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 import type { Prisma } from "@prisma/client";
 
 export async function POST(req: Request) {
