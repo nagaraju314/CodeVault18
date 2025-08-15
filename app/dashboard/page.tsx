@@ -8,11 +8,28 @@ import { redirect } from "next/navigation";
 
 async function getUserSnippets(userId: string): Promise<Snippet[]> {
   const base = process.env.NEXT_PUBLIC_BASE_URL!;
-  const url = new URL("/api/snippets", base);
-  url.searchParams.set("authorId", userId);
-  const res = await fetch(url.toString(), { cache: "no-store" });
-  if (!res.ok) return [];
-  return res.json();
+  console.log("🔍 Fetching user snippets from base URL:", base);
+
+  try {
+    const url = new URL("/api/snippets", base);
+    url.searchParams.set("authorId", userId);
+    console.log("📡 Request URL:", url.toString());
+
+    const res = await fetch(url.toString(), { cache: "no-store" });
+    console.log("📡 Response status:", res.status);
+
+    if (!res.ok) {
+      console.error("❌ Failed to fetch user snippets");
+      return [];
+    }
+
+    const data = await res.json();
+    console.log("✅ User snippets fetched:", data.length);
+    return data;
+  } catch (error) {
+    console.error("💥 Fetch error:", error);
+    return [];
+  }
 }
 
 export default async function DashboardPage() {
