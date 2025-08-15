@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   Dialog,
@@ -30,6 +31,7 @@ export function SnippetCard({
   snippet: Snippet;
   currentUserId?: string;
 }) {
+  const router = useRouter();
   const userLiked = snippet.likes?.some((l) => l.userId === currentUserId);
   const [isLiked, setIsLiked] = useState<boolean>(!!userLiked);
   const [likesCount, setLikesCount] = useState<number>(
@@ -45,6 +47,10 @@ export function SnippetCard({
   const toggleLike = async () => {
     const method = isLiked ? "DELETE" : "POST";
     const res = await fetch(`/api/snippets/${snippet.id}/like`, { method });
+    if (res.status === 401) {
+      router.push(`/login?callbackUrl=/`);
+      return;
+    }
     if (res.ok) {
       setIsLiked(!isLiked);
       setLikesCount((prev) => prev + (isLiked ? -1 : 1));
@@ -61,6 +67,12 @@ export function SnippetCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: comment.trim() }),
       });
+
+      if (res.status === 401) {
+        // not logged in → send to login
+        router.push(`/login?callbackUrl=/`);
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -85,53 +97,53 @@ export function SnippetCard({
     }
   };
 
-  const previewComments = (comments || []).slice(0, 3);
+  const visibleComments = (comments ?? []).slice(0, 3); // latest 3
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="shadow-sm">
       <CardHeader>
-        <CardTitle>{snippet.title}</CardTitle>
-        <CardDescription>
-          {snippet.language} — by {snippet.author?.name || "Unknown"}
+        <CardTitle className="flex items-center justify-between gap-3">
+          <span className="truncate">{snippet.title}</span>
+          <span className="text-xs text-gray-500">{snippet.language}</span>
+        </CardTitle>
+        <CardDescription className="text-xs">
+          {snippet.author?.name ?? "Anonymous"}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-3">
-        {Array.isArray(snippet.tags) && snippet.tags.length > 0 && (
-          <p className="text-sm text-gray-600">{snippet.tags.join(", ")}</p>
-        )}
-
-        {previewComments.length > 0 ? (
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-gray-500">Recent comments</p>
-            <ul className="space-y-2">
-              {previewComments.map((c) => (
+        {/* Latest 3 comments */}
+        <div>
+          <p className="font-medium text-sm mb-1">Recent comments</p>
+          {visibleComments.length === 0 ? (
+            <p className="text-xs text-gray-500">No comments yet.</p>
+          ) : (
+            <ul className="space-y-1">
+              {visibleComments.map((c) => (
                 <li key={c.id} className="text-sm">
                   <span className="font-medium">
                     {c.author?.name ?? "Anonymous"}:
                   </span>{" "}
-                  {String(c.content).slice(0, 120)}
-                  {String(c.content).length > 120 ? "…" : ""}
+                  {String(c.content)}
                 </li>
               ))}
             </ul>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500">No comments yet.</p>
-        )}
+          )}
+        </div>
       </CardContent>
 
-      <CardFooter className="flex justify-between items-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleLike}
-          className={isLiked ? "text-red-500" : "text-gray-500"}
-        >
-          {isLiked ? "❤" : "🤍"} {likesCount}
-        </Button>
-
+      <CardFooter className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleLike}
+            aria-label="Like"
+          >
+            {isLiked ? "❤" : "🤍"} {likesCount}
+          </Button>
+
+          {/* Comment Popup trigger */}
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button variant="secondary" size="sm">
@@ -143,13 +155,13 @@ export function SnippetCard({
                 <DialogTitle>Add a comment</DialogTitle>
               </DialogHeader>
               <Textarea
+                rows={4}
+                placeholder="Write your comment…"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Write something helpful…"
-                rows={4}
               />
               {error && <p className="text-sm text-red-600">{error}</p>}
-              <DialogFooter className="gap-2">
+              <DialogFooter className="flex items-center justify-end gap-2">
                 <DialogClose asChild>
                   <Button variant="ghost">Cancel</Button>
                 </DialogClose>
@@ -159,11 +171,11 @@ export function SnippetCard({
               </DialogFooter>
             </DialogContent>
           </Dialog>
-
-          <Link href={`/snippets/${snippet.id}`}>
-            <Button variant="link">View</Button>
-          </Link>
         </div>
+
+        <Link href={`/snippets/${snippet.id}`}>
+          <Button size="sm">View Details</Button>
+        </Link>
       </CardFooter>
     </Card>
   );

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { SnippetViewer } from "./SnippetViewer";
+import { absoluteUrl } from "@/lib/absoluteUrl";
 
 export default async function SnippetDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -7,12 +8,8 @@ export default async function SnippetDetailPage(props: {
   const { id } = await props.params;
   const cookieStore = await cookies();
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
-  }
-
-  const res = await fetch(`${baseUrl}/api/snippets/${id}`, {
+  const abs = await absoluteUrl(`/api/snippets/${id}`);
+  const res = await fetch(abs, {
     cache: "no-store",
     headers: {
       Cookie: cookieStore.toString(),

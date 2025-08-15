@@ -3,16 +3,12 @@ import { SnippetCard } from "@/components/snippets/SnippetCard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import type { Snippet } from "@/types/snippet";
+import { absoluteUrl } from "@/lib/absoluteUrl";
 
 async function getSnippets(q?: string): Promise<Snippet[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
-  }
-
-  const url = new URL(`${baseUrl}/api/snippets`);
+  const abs = await absoluteUrl("/api/snippets");
+  const url = new URL(abs);
   if (q) url.searchParams.set("q", q);
-
   const res = await fetch(url.toString(), { cache: "no-store" });
   return res.ok ? res.json() : [];
 }

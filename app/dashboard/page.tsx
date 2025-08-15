@@ -5,17 +5,13 @@ import { Button } from "@/components/ui/button";
 import { SnippetCard } from "@/components/snippets/SnippetCard";
 import type { Snippet } from "@/types/snippet";
 import { redirect } from "next/navigation";
+import { absoluteUrl } from "@/lib/absoluteUrl";
 
 async function getUserSnippets(userId: string): Promise<Snippet[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
-  }
-
-  const res = await fetch(`${baseUrl}/api/snippets?authorId=${userId}`, {
-    cache: "no-store",
-  });
-
+  const abs = await absoluteUrl("/api/snippets");
+  const url = new URL(abs);
+  url.searchParams.set("authorId", userId);
+  const res = await fetch(url.toString(), { cache: "no-store" });
   if (!res.ok) return [];
   return res.json();
 }
