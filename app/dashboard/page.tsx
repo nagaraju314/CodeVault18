@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button";
 import { SnippetCard } from "@/components/snippets/SnippetCard";
 import type { Snippet } from "@/types/snippet";
 import { redirect } from "next/navigation";
-import { absoluteUrl } from "@/lib/absoluteUrl";
 
 async function getUserSnippets(userId: string): Promise<Snippet[]> {
-  const abs = await absoluteUrl("/api/snippets");
-  const url = new URL(abs);
+  const base = process.env.NEXT_PUBLIC_BASE_URL!;
+  const url = new URL("/api/snippets", base);
   url.searchParams.set("authorId", userId);
   const res = await fetch(url.toString(), { cache: "no-store" });
   if (!res.ok) return [];

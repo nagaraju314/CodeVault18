@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { SnippetViewer } from "./SnippetViewer";
-import { absoluteUrl } from "@/lib/absoluteUrl";
 
 export default async function SnippetDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -8,8 +7,9 @@ export default async function SnippetDetailPage(props: {
   const { id } = await props.params;
   const cookieStore = await cookies();
 
-  const abs = await absoluteUrl(`/api/snippets/${id}`);
-  const res = await fetch(abs, {
+  const base = process.env.NEXT_PUBLIC_BASE_URL!;
+  const url = `${base}/api/snippets/${id}`;
+  const res = await fetch(url, {
     cache: "no-store",
     headers: {
       Cookie: cookieStore.toString(),

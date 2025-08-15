@@ -3,11 +3,10 @@ import { SnippetCard } from "@/components/snippets/SnippetCard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import type { Snippet } from "@/types/snippet";
-import { absoluteUrl } from "@/lib/absoluteUrl";
 
 async function getSnippets(q?: string): Promise<Snippet[]> {
-  const abs = await absoluteUrl("/api/snippets");
-  const url = new URL(abs);
+  const base = process.env.NEXT_PUBLIC_BASE_URL!;
+  const url = new URL("/api/snippets", base);
   if (q) url.searchParams.set("q", q);
   const res = await fetch(url.toString(), { cache: "no-store" });
   return res.ok ? res.json() : [];

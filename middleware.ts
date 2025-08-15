@@ -1,39 +1,47 @@
 import { getToken } from "next-auth/jwt";
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
+// Public paths that don't require authentication
+const PUBLIC_PATHS = [
+  "/",                // Home
+  "/login",
+  "/signup",
+  "/about",
+  "/contact",
+  "/favicon.ico",
+  "/api/snippets",    // Snippet list API (public)
+  "/api/auth",        // NextAuth APIs
+];
 
 export async function middleware(req: NextRequest) {
-  const url = req.nextUrl;
+  const { pathname } = req.nextUrl;
 
-  // public paths
-  const PUBLIC_PATHS = [
-    "/",
-    "/login",
-    "/signup",
-    "/about",
-    "/contact",
-    "/api/snippets",
-    "/api/auth",
-    "/favicon.ico",
-  ];
-
-  if (PUBLIC_PATHS.some((p) => url.pathname.startsWith(p))) {
+  // Allow public routes
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
+  // Get token from cookies or Authorization header
   const token = await getToken({
-    req, // ✅ Now typed as NextRequest
+    req,
     secret: process.env.NEXTAUTH_SECRET,
   });
 
+  // Redirect to login if no token
   if (!token) {
     const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("callbackUrl", url.pathname);
+    loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
 }
 
+// Matcher tells middleware which routes to check
 export const config = {
-  matcher: ["/dashboard/:path*", "/snippets/:path*", "/api/:path*"],
+  matcher: [
+    "/dashboard/:path*", // Protect dashboard
+    "/snippets/:path*",  // Protect snippet detail (if desired)
+    "/api/:path*",       // Protect API except public ones above
+  ],
 };
