@@ -69,7 +69,6 @@ export function SnippetCard({
       });
 
       if (res.status === 401) {
-        // not logged in → send to login
         router.push(`/login?callbackUrl=/`);
         return;
       }
@@ -97,7 +96,7 @@ export function SnippetCard({
     }
   };
 
-  const visibleComments = (comments ?? []).slice(0, 3); // latest 3
+  const visibleComments = (comments ?? []).slice(0, 3);
 
   return (
     <Card className="shadow-sm">
@@ -112,7 +111,6 @@ export function SnippetCard({
       </CardHeader>
 
       <CardContent className="space-y-3">
-        {/* Latest 3 comments */}
         <div>
           <p className="font-medium text-sm mb-1">Recent comments</p>
           {visibleComments.length === 0 ? (
@@ -134,16 +132,10 @@ export function SnippetCard({
 
       <CardFooter className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleLike}
-            aria-label="Like"
-          >
+          <Button variant="ghost" size="sm" onClick={toggleLike}>
             {isLiked ? "❤" : "🤍"} {likesCount}
           </Button>
 
-          {/* Comment Popup trigger */}
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button variant="secondary" size="sm">
