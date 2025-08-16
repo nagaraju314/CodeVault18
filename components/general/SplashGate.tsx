@@ -24,20 +24,17 @@ export default function SplashGate() {
           }`}
         >
           Code<span className="text-blue-600">Vault</span>
-          <h1 className="text-3xl mt-1 font-bold">
-            Share & Discover Code Snippets
-          </h1>
         </div>
         <p
-          className={`text-xl mt-1 text-gray-600 transition-opacity duration-700 ${
+          className={`mt-3 text-gray-600 transition-opacity duration-700 ${
             done ? "opacity-100" : "opacity-0"
           }`}
         >
-          A platform for developers to store, share, and find useful code.
+          Share & discover code snippets.
         </p>
 
         {done && (
-          <div className="mt-5 flex items-center justify-center gap-3">
+          <div className="mt-8 flex items-center justify-center gap-3">
             <Button
               aria-label="Go to login"
               onClick={() => router.push("/login?callbackUrl=/")}

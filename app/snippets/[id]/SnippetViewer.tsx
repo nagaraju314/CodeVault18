@@ -116,6 +116,9 @@ export function SnippetViewer({ snippet }: { snippet: Snippet }) {
               <ul className="space-y-2">
                 {comments.map((c) => (
                   <li key={c.id} className="text-sm">
+                    <span className="font-medium">
+                      {c.author?.name ?? "Anonymous"}:
+                    </span>{" "}
                     {String(c.content)}
                   </li>
                 ))}

@@ -128,6 +128,9 @@ export function SnippetCard({
             <ul className="space-y-1">
               {visibleComments.map((c) => (
                 <li key={c.id} className="text-sm">
+                  <span className="font-medium">
+                    {c.author?.name ?? "Anonymous"}:
+                  </span>{" "}
                   {String(c.content)}
                 </li>
               ))}

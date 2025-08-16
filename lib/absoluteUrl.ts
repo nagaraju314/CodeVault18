@@ -1,18 +1,23 @@
 // lib/absoluteUrl.ts
-export async function absoluteUrl(path: string): Promise<string> {
-  // On the server (Node / Vercel runtime)
-  if (typeof window === "undefined") {
-    const protocol =
-      process.env.VERCEL_ENV === "production" ? "https" : "http";
+import { headers } from "next/headers";
 
-    const host =
-      process.env.VERCEL_URL || // Vercel auto-injected
-      process.env.NEXT_PUBLIC_VERCEL_URL || // fallback if defined
-      "localhost:3000";
+/**
+ * Build a safe absolute URL that works on Vercel & locally
+ * without relying on NEXT_PUBLIC_BASE_URL.
+ */
+export async function absoluteUrl(path: string) {
+  const h = await headers(); // ✅ must await in Next.js 14+
 
-    return `${protocol}://${host}${path}`;
-  }
+  const proto = h.get("x-forwarded-proto") ?? "http";
+  const host =
+    h.get("x-forwarded-host") ??
+    h.get("host") ??
+    process.env.VERCEL_URL ??
+    "localhost:3000";
 
-  // On the client, relative path is fine
-  return path;
+  const base =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (String(host).startsWith("http") ? String(host) : `${proto}://${host}`);
+
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }

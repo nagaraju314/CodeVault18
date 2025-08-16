@@ -1,3 +1,4 @@
+// app/api/snippets/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import clientPromise from "@/lib/mongodb";
@@ -10,18 +11,17 @@ const cacheHeaders = {
   "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
 };
 
-// --- POST: Create a new snippet ---
 export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
     const { title, code, language, tags } = await req.json();
 
-    if (!title?.trim() || !code?.trim() || !language?.trim()) {
+    if (!title || !code || !language) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -30,9 +30,9 @@ export async function POST(req: Request) {
 
     const snippet = await prisma.snippet.create({
       data: {
-        title: title.trim(),
-        code: code.trim(),
-        language: language.trim(),
+        title,
+        code,
+        language,
         tags: Array.isArray(tags) ? tags : [],
         authorId: session.user.id,
       },
@@ -48,7 +48,6 @@ export async function POST(req: Request) {
   }
 }
 
-// --- GET: Fetch snippets with filters + author info ---
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -75,11 +74,9 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // Collect authorIds to lookup in Mongo
+    // get authors from MongoDB
     const authorIds = [
-      ...new Set(
-        snippets.map((s) => s.authorId).filter((id): id is string => Boolean(id))
-      ),
+      ...new Set(snippets.map((s) => s.authorId).filter((id): id is string => Boolean(id))),
     ];
 
     const client = await clientPromise;
@@ -89,15 +86,12 @@ export async function GET(req: Request) {
       .collection("users")
       .find({
         _id: {
-          $in: authorIds
-            .filter((id) => ObjectId.isValid(id))
-            .map((id) => new ObjectId(id)),
+          $in: authorIds.filter(ObjectId.isValid).map((id) => new ObjectId(id)),
         },
       })
       .project({ _id: 1, name: 1, email: 1 })
       .toArray();
 
-    // Stitch author info into snippets
     const snippetsWithAuthors = snippets.map((s) => ({
       ...s,
       author: s.authorId
