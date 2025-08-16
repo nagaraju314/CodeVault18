@@ -6,23 +6,33 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import type { Prisma } from "@prisma/client";
 
-export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+const cacheHeaders = {
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+};
 
+// --- POST: Create a new snippet ---
+export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
     const { title, code, language, tags } = await req.json();
-    if (!title || !code || !language) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+
+    if (!title?.trim() || !code?.trim() || !language?.trim()) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
     }
 
     const snippet = await prisma.snippet.create({
       data: {
-        title,
-        code,
-        language,
+        title: title.trim(),
+        code: code.trim(),
+        language: language.trim(),
         tags: Array.isArray(tags) ? tags : [],
         authorId: session.user.id,
       },
@@ -31,10 +41,14 @@ export async function POST(req: Request) {
     return NextResponse.json(snippet, { status: 201 });
   } catch (error) {
     console.error("Error creating snippet:", error);
-    return NextResponse.json({ error: "Failed to create snippet" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create snippet" },
+      { status: 500 }
+    );
   }
 }
 
+// --- GET: Fetch snippets with filters + author info ---
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -61,8 +75,11 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
+    // Collect authorIds to lookup in Mongo
     const authorIds = [
-      ...new Set(snippets.map((s) => s.authorId).filter((id): id is string => Boolean(id))),
+      ...new Set(
+        snippets.map((s) => s.authorId).filter((id): id is string => Boolean(id))
+      ),
     ];
 
     const client = await clientPromise;
@@ -80,6 +97,7 @@ export async function GET(req: Request) {
       .project({ _id: 1, name: 1, email: 1 })
       .toArray();
 
+    // Stitch author info into snippets
     const snippetsWithAuthors = snippets.map((s) => ({
       ...s,
       author: s.authorId
@@ -87,9 +105,11 @@ export async function GET(req: Request) {
         : null,
     }));
 
-    return NextResponse.json(snippetsWithAuthors);
+    return new NextResponse(JSON.stringify(snippetsWithAuthors), {
+      headers: { "Content-Type": "application/json", ...cacheHeaders },
+    });
   } catch (error) {
     console.error("Error fetching snippets:", error);
-    return NextResponse.json([], { status: 500 });
+    return NextResponse.json([], { status: 500, headers: cacheHeaders });
   }
 }

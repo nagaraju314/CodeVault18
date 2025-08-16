@@ -59,25 +59,15 @@ export default function NavbarContent() {
         </div>
       </div>
 
-      {/* Right cluster */}
+      {/* Right cluster (only Logout if logged in) */}
       <div className="hidden md:flex items-center gap-3">
-        {session ? (
+        {session && (
           <Button
             variant="secondary"
-            className="ml-2"
             onClick={() => signOut({ callbackUrl: "/" })}
           >
             Logout
           </Button>
-        ) : (
-          <>
-            <Link href="/login">
-              <Button>Login</Button>
-            </Link>
-            <Link href="/signup">
-              <Button variant="secondary">Sign Up</Button>
-            </Link>
-          </>
         )}
       </div>
 
@@ -106,35 +96,24 @@ export default function NavbarContent() {
           </div>
 
           {session && (
-            <Link href="/dashboard">
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={() => setIsOpen(false)}
-              >
-                Dashboard
-              </Button>
-            </Link>
-          )}
-
-          {session ? (
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={() => signOut({ callbackUrl: "/" })}
-            >
-              Logout
-            </Button>
-          ) : (
             <>
-              <Link href="/login" onClick={() => setIsOpen(false)}>
-                <Button className="w-full">Login</Button>
-              </Link>
-              <Link href="/signup" onClick={() => setIsOpen(false)}>
-                <Button variant="secondary" className="w-full">
-                  Sign Up
+              <Link href="/dashboard">
+                <Button
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Dashboard
                 </Button>
               </Link>
+
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => signOut({ callbackUrl: "/" })}
+              >
+                Logout
+              </Button>
             </>
           )}
         </div>

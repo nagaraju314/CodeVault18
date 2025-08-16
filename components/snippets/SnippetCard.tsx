@@ -1,3 +1,4 @@
+// components/snippets/SnippetCard.tsx
 "use client";
 
 import {
@@ -18,7 +19,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogFooter as DialogButtons,
   DialogClose,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -99,11 +100,19 @@ export function SnippetCard({
   const visibleComments = (comments ?? []).slice(0, 3);
 
   return (
-    <Card className="shadow-sm">
+    <Card
+      className="shadow-sm"
+      aria-label={`Snippet card for ${snippet.title}`}
+    >
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-3">
           <span className="truncate">{snippet.title}</span>
-          <span className="text-xs text-gray-500">{snippet.language}</span>
+          <span
+            className="text-xs text-gray-500"
+            aria-label="Programming language"
+          >
+            {snippet.language}
+          </span>
         </CardTitle>
         <CardDescription className="text-xs">
           {snippet.author?.name ?? "Anonymous"}
@@ -119,9 +128,6 @@ export function SnippetCard({
             <ul className="space-y-1">
               {visibleComments.map((c) => (
                 <li key={c.id} className="text-sm">
-                  <span className="font-medium">
-                    {c.author?.name ?? "Anonymous"}:
-                  </span>{" "}
                   {String(c.content)}
                 </li>
               ))}
@@ -132,13 +138,18 @@ export function SnippetCard({
 
       <CardFooter className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={toggleLike}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleLike}
+            aria-label="Toggle like"
+          >
             {isLiked ? "❤" : "🤍"} {likesCount}
           </Button>
 
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button variant="secondary" size="sm">
+              <Button variant="secondary" size="sm" aria-label="Add comment">
                 Add Comment
               </Button>
             </DialogTrigger>
@@ -151,21 +162,29 @@ export function SnippetCard({
                 placeholder="Write your comment…"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
+                aria-label="Comment text"
               />
               {error && <p className="text-sm text-red-600">{error}</p>}
-              <DialogFooter className="flex items-center justify-end gap-2">
+              <DialogButtons className="flex items-center justify-end gap-2">
                 <DialogClose asChild>
                   <Button variant="ghost">Cancel</Button>
                 </DialogClose>
-                <Button onClick={postComment} disabled={posting}>
+                <Button
+                  onClick={postComment}
+                  disabled={posting}
+                  aria-label="Post"
+                >
                   {posting ? "Posting…" : "Post"}
                 </Button>
-              </DialogFooter>
+              </DialogButtons>
             </DialogContent>
           </Dialog>
         </div>
 
-        <Link href={`/snippets/${snippet.id}`}>
+        <Link
+          href={`/snippets/${snippet.id}`}
+          aria-label="View snippet details"
+        >
           <Button size="sm">View Details</Button>
         </Link>
       </CardFooter>

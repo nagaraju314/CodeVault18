@@ -3,14 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Public paths that don't require authentication
 const PUBLIC_PATHS = [
-  "/",                // Home
+  "/",               
   "/login",
   "/signup",
   "/about",
   "/contact",
   "/favicon.ico",
-  "/api/snippets",    // Snippet list API (public)
-  "/api/auth",        // NextAuth APIs
 ];
 
 export async function middleware(req: NextRequest) {
@@ -36,6 +34,7 @@ export async function middleware(req: NextRequest) {
 
   return NextResponse.next();
 }
+
 
 // Matcher tells middleware which routes to check
 export const config = {

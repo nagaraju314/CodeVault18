@@ -1,3 +1,4 @@
+// app/snippets/[id]/SnippetViewer.tsx
 "use client";
 
 import { useState } from "react";
@@ -52,6 +53,7 @@ export function SnippetViewer({ snippet }: { snippet: Snippet }) {
         <CardHeader className="flex justify-between items-center border-b pb-3 bg-white">
           <div className="flex items-center gap-2">
             <Button
+              aria-label="Back to dashboard"
               variant="ghost"
               size="icon"
               onClick={() => router.push("/dashboard")}
@@ -86,7 +88,7 @@ export function SnippetViewer({ snippet }: { snippet: Snippet }) {
             <CopyButton code={snippet.code} />
           </div>
 
-          <section className="space-y-3">
+          <section className="space-y-3" aria-label="Comments">
             <h3 className="font-semibold">Comments</h3>
             <div className="space-y-3">
               <Textarea
@@ -94,10 +96,15 @@ export function SnippetViewer({ snippet }: { snippet: Snippet }) {
                 placeholder="Add a helpful comment…"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
+                aria-label="Write a comment"
               />
               {error && <p className="text-sm text-red-600">{error}</p>}
               <div className="flex justify-end">
-                <Button onClick={onPost} disabled={posting}>
+                <Button
+                  onClick={onPost}
+                  disabled={posting}
+                  aria-label="Post comment"
+                >
                   {posting ? "Posting…" : "Post Comment"}
                 </Button>
               </div>
@@ -109,9 +116,6 @@ export function SnippetViewer({ snippet }: { snippet: Snippet }) {
               <ul className="space-y-2">
                 {comments.map((c) => (
                   <li key={c.id} className="text-sm">
-                    <span className="font-medium">
-                      {c.author?.name ?? "Anonymous"}:
-                    </span>{" "}
                     {String(c.content)}
                   </li>
                 ))}
