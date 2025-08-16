@@ -1,19 +1,21 @@
 // components/home/SnippetGrid.tsx
+import { prisma } from "@/lib/prisma";
 import { SnippetCard } from "@/components/snippets/SnippetCard";
 import type { Snippet } from "@/types/snippet";
 
+// ISR-style caching (avoid hammering DB)
+export const revalidate = 60; // 60 seconds
+
 async function getSnippets(q?: string): Promise<Snippet[]> {
-  const base = process.env.NEXT_PUBLIC_BASE_URL!;
-  const url = new URL("/api/snippets", base);
-  if (q) url.searchParams.set("q", q);
-
-  // Revalidate periodically so the stream stays fresh without hammering the DB
-  const res = await fetch(url.toString(), {
-    next: { revalidate: 60 }, // 60s ISR-style cache
+  return prisma.snippet.findMany({
+    where: q
+      ? {
+          title: { contains: q, mode: "insensitive" },
+        }
+      : {},
+    orderBy: { createdAt: "desc" },
+    take: 30, // ✅ limit results for performance
   });
-
-  if (!res.ok) return [];
-  return res.json();
 }
 
 export default async function SnippetGrid({

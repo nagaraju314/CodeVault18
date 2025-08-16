@@ -10,20 +10,18 @@ import SnippetCardSkeleton from "@/components/home/SnippetCardSkeleton";
 export default async function Home({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string }>;
+  searchParams?: { q?: string };
 }) {
-  const params = await searchParams;
-  const session = await getServerSession(authOptions);
+  const [session] = await Promise.all([getServerSession(authOptions)]);
 
-  // If not authenticated, we show intro animation/gate
   if (!session) {
     return <SplashGate />;
   }
 
-  // Authenticated users get the actual home with streaming of the grid
   return (
     <div className="flex flex-col min-h-screen">
       <Hero />
+
       <Suspense
         fallback={
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
@@ -33,8 +31,8 @@ export default async function Home({
           </div>
         }
       >
-        {/* This server component fetches & streams */}
-        <SnippetGrid q={params?.q} userId={session.user?.id} />
+        {/* Snippets stream in after session is ready */}
+        <SnippetGrid q={searchParams?.q} userId={session.user?.id} />
       </Suspense>
     </div>
   );
