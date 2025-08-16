@@ -3,29 +3,17 @@ import { SnippetCard } from "@/components/snippets/SnippetCard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import type { Snippet } from "@/types/snippet";
+import { absoluteUrl } from "@/lib/absoluteUrl";
 
 async function getSnippets(q?: string): Promise<Snippet[]> {
-  const base = process.env.NEXT_PUBLIC_BASE_URL!;
-  console.log("🔍 Fetching snippets from base URL:", base);
-
   try {
-    const url = new URL("/api/snippets", base);
-    if (q) url.searchParams.set("q", q);
-    console.log("📡 Request URL:", url.toString());
+    let url = await absoluteUrl("/api/snippets");
+    if (q) url += `?q=${encodeURIComponent(q)}`;
 
-    const res = await fetch(url.toString(), { cache: "no-store" });
-    console.log("📡 Response status:", res.status);
-
-    if (!res.ok) {
-      console.error("❌ Failed to fetch snippets");
-      return [];
-    }
-
-    const data = await res.json();
-    console.log("✅ Snippets fetched:", data.length);
-    return data;
+    const res = await fetch(url, { cache: "no-store" });
+    return res.ok ? res.json() : [];
   } catch (error) {
-    console.error("💥 Fetch error:", error);
+    console.error("💥 Fetch error (getSnippets):", error);
     return [];
   }
 }
@@ -37,6 +25,7 @@ export default async function Home({
 }) {
   const params = await searchParams;
   const session = await getServerSession(authOptions);
+
   const snippets = await getSnippets(params?.q);
 
   return (
@@ -44,7 +33,7 @@ export default async function Home({
       <Hero />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
         {snippets.length > 0 ? (
-          snippets.map((snippet: Snippet) => (
+          snippets.map((snippet) => (
             <SnippetCard
               key={snippet.id}
               snippet={snippet}

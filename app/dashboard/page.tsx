@@ -5,29 +5,17 @@ import { Button } from "@/components/ui/button";
 import { SnippetCard } from "@/components/snippets/SnippetCard";
 import type { Snippet } from "@/types/snippet";
 import { redirect } from "next/navigation";
+import { absoluteUrl } from "@/lib/absoluteUrl";
 
 async function getUserSnippets(userId: string): Promise<Snippet[]> {
-  const base = process.env.NEXT_PUBLIC_BASE_URL!;
-  console.log("🔍 Fetching user snippets from base URL:", base);
-
   try {
-    const url = new URL("/api/snippets", base);
-    url.searchParams.set("authorId", userId);
-    console.log("📡 Request URL:", url.toString());
-
-    const res = await fetch(url.toString(), { cache: "no-store" });
-    console.log("📡 Response status:", res.status);
-
-    if (!res.ok) {
-      console.error("❌ Failed to fetch user snippets");
-      return [];
-    }
-
-    const data = await res.json();
-    console.log("✅ User snippets fetched:", data.length);
-    return data;
+    let url = await absoluteUrl(
+      `/api/snippets?authorId=${encodeURIComponent(userId)}`
+    );
+    const res = await fetch(url, { cache: "no-store" });
+    return res.ok ? res.json() : [];
   } catch (error) {
-    console.error("💥 Fetch error:", error);
+    console.error("💥 Fetch error (getUserSnippets):", error);
     return [];
   }
 }
@@ -61,7 +49,7 @@ export default async function DashboardPage() {
         <p>No snippets yet.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {snippets.map((snippet: Snippet) => (
+          {snippets.map((snippet) => (
             <SnippetCard
               key={snippet.id}
               snippet={snippet}
