@@ -14,7 +14,7 @@ async function getSnippets(q?: string): Promise<Snippet[]> {
         }
       : {},
     orderBy: { createdAt: "desc" },
-    take: 30, // ✅ limit results for performance
+    take: 30,
   });
 }
 
