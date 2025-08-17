@@ -4,40 +4,39 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function POST(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
+  _req: Request,
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await context.params; // ✅ Await params
   const session = await getServerSession(authOptions);
-
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    await prisma.like.create({
-      data: { userId: session.user.id, snippetId: id },
-    });
-    return NextResponse.json({ message: "Liked" });
-  } catch {
-    return NextResponse.json({ error: "Already liked" }, { status: 400 });
-  }
+  const { id } = params;
+
+  await prisma.like.upsert({
+    where: { userId_snippetId: { userId: session.user.id, snippetId: id } },
+    create: { userId: session.user.id, snippetId: id },
+    update: {},
+  });
+
+  return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
+  _req: Request,
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await context.params; // ✅ Await params
   const session = await getServerSession(authOptions);
-
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { id } = params;
 
   await prisma.like.deleteMany({
     where: { userId: session.user.id, snippetId: id },
   });
 
-  return NextResponse.json({ message: "Unliked" });
+  return NextResponse.json({ ok: true });
 }
