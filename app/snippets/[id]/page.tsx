@@ -8,7 +8,7 @@ export default async function SnippetDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params; // ✅ must await because it's typed as Promise
+  const { id } = await params;
 
   const cookieStore = await cookies();
   const url = await absoluteUrl(`/api/snippets/${id}`);
