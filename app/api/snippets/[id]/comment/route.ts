@@ -1,3 +1,4 @@
+// app/api/snippets/[id]/comment/route.ts
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
@@ -5,14 +6,14 @@ import { NextResponse } from "next/server";
 
 export async function POST(
   req: Request,
-  context: { params: { id: string } }   // 👈 params is NOT a Promise
+  { params }: { params: { id: string } }   // ✅ correct signature
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = context.params; // ✅ no need to await
+  const { id } = params; // ✅ destructured params (no Promise)
 
   const { content } = await req.json();
   if (!content?.trim()) {
