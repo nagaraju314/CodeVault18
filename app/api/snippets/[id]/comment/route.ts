@@ -5,14 +5,14 @@ import { NextResponse } from "next/server";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }   // ✅ plain object
+  context: { params: { id: string } }   // ✅ must be wrapped in `context`
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = context.params;   // ✅ use context.params
   const { content } = await req.json();
 
   if (!String(content || "").trim()) {
