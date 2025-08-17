@@ -1,36 +1,42 @@
-// app/api/snippets/[id]/route.ts
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
+
+const cacheHeaders = {
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+};
 
 export async function GET(
   _req: Request,
-  context: { params: Promise<{ id: string }> } // ✅ mark as Promise
+  context: { params: { id: string } }  // 👈 fix type
 ) {
-  const session = await getServerSession();
-  const userId = session?.user?.id ?? null;
+  const { id } = context.params;
 
-  const { id } = await context.params; // ✅ await params
+  try {
+    const snippet = await prisma.snippet.findUnique({
+      where: { id },
+      include: {
+        author: { select: { name: true, email: true } },
+        likes: true,
+        comments: { orderBy: { createdAt: "desc" } },
+      },
+    });
 
-  const snippet = await prisma.snippet.findUnique({
-    where: { id },
-    include: {
-      comments: { orderBy: { createdAt: "desc" } },
-      _count: { select: { likes: true } },
-      likes: userId
-        ? { where: { userId }, select: { id: true } }
-        : false,
-    },
-  });
+    if (!snippet) {
+      return NextResponse.json(
+        { error: "Snippet not found" },
+        { status: 404, headers: cacheHeaders }
+      );
+    }
 
-  if (!snippet) return new Response("Not Found", { status: 404 });
-
-  return Response.json({
-    id: snippet.id,
-    title: snippet.title,
-    code: snippet.code,
-    language: snippet.language,
-    likesCount: snippet._count.likes,
-    likedByMe: userId ? snippet.likes.length > 0 : false,
-    comments: snippet.comments,
-  });
+    return new NextResponse(
+      JSON.stringify({ ...snippet, author: snippet.author || null }),
+      { headers: { "Content-Type": "application/json", ...cacheHeaders } }
+    );
+  } catch (err) {
+    console.error("Error fetching snippet:", err);
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500, headers: cacheHeaders }
+    );
+  }
 }

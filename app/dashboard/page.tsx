@@ -48,6 +48,11 @@ export default async function DashboardPage() {
           <Button>Create Snippet</Button>
         </Link>
       </div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl text-gray-500 mb-2">
+          Welcome back, {session.user.name || "Developer"}!
+        </h2>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {snippets.map((s) => (
