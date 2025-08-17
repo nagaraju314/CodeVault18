@@ -6,10 +6,9 @@ import { absoluteUrl } from "@/lib/absoluteUrl";
 export default async function SnippetDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  // Your doc typed params as Promise in APIs, but here it's a plain object.
-  const { id } = params;
+  const { id } = await params; // ✅ must await because it's typed as Promise
 
   const cookieStore = await cookies();
   const url = await absoluteUrl(`/api/snippets/${id}`);
