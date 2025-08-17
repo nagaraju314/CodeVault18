@@ -9,7 +9,7 @@ export default async function SnippetDetailPage({
   params: { id: string };
 }) {
   const { id } = params;
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
 
   const url = await absoluteUrl(`/api/snippets/${id}`);
   const res = await fetch(url, {
