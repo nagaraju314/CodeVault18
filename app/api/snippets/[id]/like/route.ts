@@ -1,4 +1,3 @@
-// app/api/snippets/[id]/like/route.ts
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";

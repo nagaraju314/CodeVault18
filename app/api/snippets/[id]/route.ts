@@ -1,4 +1,3 @@
-// app/api/snippets/[id]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -10,9 +9,11 @@ export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  const { id } = params;
+
   try {
     const snippet = await prisma.snippet.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         author: { select: { name: true, email: true } },
         likes: true,
@@ -27,9 +28,10 @@ export async function GET(
       );
     }
 
-    return new NextResponse(JSON.stringify(snippet), {
-      headers: { "Content-Type": "application/json", ...cacheHeaders },
-    });
+    return new NextResponse(
+      JSON.stringify({ ...snippet, author: snippet.author || null }),
+      { headers: { "Content-Type": "application/json", ...cacheHeaders } }
+    );
   } catch (err) {
     console.error("Error fetching snippet:", err);
     return NextResponse.json(

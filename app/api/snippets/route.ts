@@ -1,6 +1,7 @@
-// app/api/snippets/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import clientPromise from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import type { Prisma } from "@prisma/client";
@@ -9,10 +10,8 @@ const cacheHeaders = {
   "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
 };
 
-// ✅ Create a snippet
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
@@ -47,7 +46,6 @@ export async function POST(req: Request) {
   }
 }
 
-// ✅ Fetch snippets with filters
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -74,7 +72,35 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    return new NextResponse(JSON.stringify(snippets), {
+    const authorIds = [
+      ...new Set(
+        snippets.map((s) => s.authorId).filter((id): id is string => Boolean(id))
+      ),
+    ];
+
+    const client = await clientPromise;
+    const db = client.db();
+
+    const authors = await db
+      .collection("users")
+      .find({
+        _id: {
+          $in: authorIds
+            .filter(ObjectId.isValid)
+            .map((id) => new ObjectId(id)),
+        },
+      })
+      .project({ _id: 1, name: 1, email: 1 })
+      .toArray();
+
+    const snippetsWithAuthors = snippets.map((s) => ({
+      ...s,
+      author: s.authorId
+        ? authors.find((a) => a._id.toString() === s.authorId) || null
+        : null,
+    }));
+
+    return new NextResponse(JSON.stringify(snippetsWithAuthors), {
       headers: { "Content-Type": "application/json", ...cacheHeaders },
     });
   } catch (error) {
