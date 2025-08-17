@@ -6,9 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import type { Prisma } from "@prisma/client";
 
-const cacheHeaders = {
-  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
-};
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -17,13 +15,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { title, code, language, tags } = await req.json();
+    const body = await req.json();
+    const title = String(body?.title || "").trim();
+    const code = String(body?.code || "").trim();
+    const language = String(body?.language || "").trim();
+    const tags = Array.isArray(body?.tags) ? body.tags : [];
 
     if (!title || !code || !language) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const snippet = await prisma.snippet.create({
@@ -31,7 +30,7 @@ export async function POST(req: Request) {
         title,
         code,
         language,
-        tags: Array.isArray(tags) ? tags : [],
+        tags,
         authorId: session.user.id,
       },
     });
@@ -39,18 +38,15 @@ export async function POST(req: Request) {
     return NextResponse.json(snippet, { status: 201 });
   } catch (error) {
     console.error("Error creating snippet:", error);
-    return NextResponse.json(
-      { error: "Failed to create snippet" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create snippet" }, { status: 500 });
   }
 }
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const q = searchParams.get("q")?.trim();
-    const authorId = searchParams.get("authorId")?.trim();
+    const q = searchParams.get("q")?.trim() || "";
+    const authorId = searchParams.get("authorId")?.trim() || "";
 
     const where: Prisma.SnippetWhereInput = {};
     if (q) {
@@ -72,10 +68,9 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    const authorIds = [
-      ...new Set(
-        snippets.map((s) => s.authorId).filter((id): id is string => Boolean(id))
-      ),
+    // (Mongo) join authors for the cards, as in your doc
+    const ids = [
+      ...new Set(snippets.map((s) => s.authorId).filter(Boolean) as string[]),
     ];
 
     const client = await clientPromise;
@@ -85,26 +80,22 @@ export async function GET(req: Request) {
       .collection("users")
       .find({
         _id: {
-          $in: authorIds
-            .filter(ObjectId.isValid)
-            .map((id) => new ObjectId(id)),
+          $in: ids.filter(ObjectId.isValid).map((id) => new ObjectId(id)),
         },
       })
       .project({ _id: 1, name: 1, email: 1 })
       .toArray();
 
-    const snippetsWithAuthors = snippets.map((s) => ({
+    const data = snippets.map((s) => ({
       ...s,
       author: s.authorId
         ? authors.find((a) => a._id.toString() === s.authorId) || null
         : null,
     }));
 
-    return new NextResponse(JSON.stringify(snippetsWithAuthors), {
-      headers: { "Content-Type": "application/json", ...cacheHeaders },
-    });
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching snippets:", error);
-    return NextResponse.json([], { status: 500, headers: cacheHeaders });
+    return NextResponse.json([], { status: 500 });
   }
 }

@@ -39,7 +39,9 @@ export default function CreateSnippetPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
+          title: form.title,
+          code: form.code,
+          language: form.language,
           tags: form.tags
             .split(",")
             .map((t) => t.trim())
@@ -48,8 +50,10 @@ export default function CreateSnippetPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Failed to create snippet");
+        const data = await res.json().catch(() => ({}));
+        setError(
+          (data as { error?: string }).error || "Failed to create snippet"
+        );
         return;
       }
       router.push("/dashboard");
@@ -62,7 +66,6 @@ export default function CreateSnippetPage() {
 
   return (
     <div className="p-6 max-w-lg mx-auto relative">
-      {/* X Button in the top-right corner */}
       <Button
         variant="ghost"
         size="icon"
@@ -97,7 +100,7 @@ export default function CreateSnippetPage() {
           name="language"
           value={form.language}
           onChange={handleChange}
-          placeholder="Language (e.g., JavaScript)"
+          placeholder="Language (e.g., TypeScript)"
           required
           className="w-full border p-2 rounded"
         />

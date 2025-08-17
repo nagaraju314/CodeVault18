@@ -8,10 +8,12 @@ export default async function SnippetDetailPage({
 }: {
   params: { id: string };
 }) {
-  const { id } = await params;
-  const cookieStore = await cookies();
+  // Your doc typed params as Promise in APIs, but here it's a plain object.
+  const { id } = params;
 
+  const cookieStore = await cookies();
   const url = await absoluteUrl(`/api/snippets/${id}`);
+
   const res = await fetch(url, {
     cache: "no-store",
     headers: { Cookie: cookieStore.toString() },

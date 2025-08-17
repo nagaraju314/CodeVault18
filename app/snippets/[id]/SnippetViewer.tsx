@@ -1,4 +1,3 @@
-// app/snippets/[id]/SnippetViewer.tsx
 "use client";
 
 import { useState } from "react";
@@ -53,7 +52,6 @@ export function SnippetViewer({ snippet }: { snippet: Snippet }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-green-100 flex justify-center p-6">
       <Card className="w-full max-w-3xl shadow-lg rounded-2xl border border-gray-200 overflow-hidden bg-white">
-        {/* Header */}
         <CardHeader className="flex justify-between items-center border-b pb-3 bg-gray-50">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -68,57 +66,47 @@ export function SnippetViewer({ snippet }: { snippet: Snippet }) {
           </span>
         </CardHeader>
 
-        {/* Code Block */}
-        <CardContent className="relative mt-4">
+        <CardContent className="space-y-4">
           <div className="relative">
-            <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto text-sm max-h-64">
-              <code>{snippet.code}</code>
-            </pre>
             <Button
-              size="icon"
               variant="secondary"
-              className="absolute top-2 right-2"
+              size="icon"
+              className="absolute top-3 right-3"
               onClick={copyCode}
             >
               <Copy className="w-4 h-4" />
             </Button>
+            <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 text-sm max-h-96 overflow-auto">
+              <code>{snippet.code}</code>
+            </pre>
           </div>
 
-          {/* Comments Section */}
-          <div className="mt-6">
-            <h3 className="font-semibold mb-3">Comments</h3>
-            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-              {comments.length > 0 ? (
+          <div className="space-y-2">
+            <h3 className="font-medium">Comments</h3>
+            <Textarea
+              placeholder="Write your comment…"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={3}
+            />
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <Button onClick={onPost} disabled={posting}>
+              {posting ? "Posting…" : "Post"}
+            </Button>
+
+            <div className="space-y-2 pt-2">
+              {comments.length ? (
                 comments.map((c) => (
                   <div
                     key={c.id}
-                    className="bg-gray-50 border rounded-lg p-3 shadow-sm"
+                    className="bg-gray-50 border px-3 py-2 rounded-lg text-sm text-gray-700"
                   >
-                    <p className="text-sm text-gray-800">{c.content}</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {new Date(c.createdAt).toLocaleString()}
-                    </p>
+                    {c.content}
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-400 italic">No comments yet.</p>
+                <p className="text-xs text-gray-400 italic">No comments yet.</p>
               )}
-            </div>
-
-            {/* Add Comment */}
-            <div className="mt-5">
-              <Textarea
-                rows={3}
-                placeholder="Write your comment…"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-              />
-              {error && <p className="text-sm text-red-600">{error}</p>}
-              <div className="flex justify-end mt-2">
-                <Button onClick={onPost} disabled={posting}>
-                  {posting ? "Posting…" : "Post"}
-                </Button>
-              </div>
             </div>
           </div>
         </CardContent>
