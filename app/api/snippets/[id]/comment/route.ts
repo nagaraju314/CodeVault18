@@ -4,16 +4,13 @@ import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }   // ✅ Next.js-compatible
-) {
+export async function POST(req: Request, context: any) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = context.params;   // ✅ works with any
   const { content } = await req.json();
 
   if (!content?.trim()) {
