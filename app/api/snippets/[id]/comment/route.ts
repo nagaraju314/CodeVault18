@@ -9,17 +9,14 @@ interface CommentRequestBody {
   content: string
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, context: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { id } = params
+  const { id } = context.params
   const { content } = (await req.json()) as CommentRequestBody
 
   if (!content?.trim()) {
