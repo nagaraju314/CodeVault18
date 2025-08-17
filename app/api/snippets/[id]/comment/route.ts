@@ -3,25 +3,23 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/authOptions"
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
-
-interface CommentContext {
-  params: {
-    id: string
-  }
-}
+import type { NextRequest } from "next/server"
 
 interface CommentRequestBody {
   content: string
 }
 
-export async function POST(req: Request, context: CommentContext) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   const session = await getServerSession(authOptions)
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { id } = context.params
+  const { id } = params
   const { content } = (await req.json()) as CommentRequestBody
 
   if (!content?.trim()) {
