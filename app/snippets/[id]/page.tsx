@@ -1,4 +1,5 @@
 // app/snippets/[id]/page.tsx
+//updated
 import { cookies } from "next/headers";
 import { SnippetViewer } from "./SnippetViewer";
 import { absoluteUrl } from "@/lib/absoluteUrl";
