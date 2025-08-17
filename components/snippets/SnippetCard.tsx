@@ -1,11 +1,9 @@
-// components/snippets/SnippetCard.tsx
 "use client";
 
 import {
   Card,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
@@ -34,6 +32,7 @@ export function SnippetCard({
 }) {
   const router = useRouter();
   const userLiked = snippet.likes?.some((l) => l.userId === currentUserId);
+
   const [isLiked, setIsLiked] = useState<boolean>(!!userLiked);
   const [likesCount, setLikesCount] = useState<number>(
     snippet.likes?.length || 0
@@ -54,7 +53,7 @@ export function SnippetCard({
     }
     if (res.ok) {
       setIsLiked(!isLiked);
-      setLikesCount((prev) => prev + (isLiked ? -1 : 1));
+      setLikesCount((prev: number) => prev + (isLiked ? -1 : 1));
     }
   };
 
@@ -84,9 +83,8 @@ export function SnippetCard({
           id: `temp-${Date.now()}`,
           content: comment.trim(),
           createdAt: new Date().toISOString(),
-          author: { name: "You" },
         };
-        setComments((prev) => [newItem, ...prev]);
+        setComments((prev) => [newItem, ...prev].slice(0, 3));
         setComment("");
         setOpen(false);
       }
@@ -97,63 +95,61 @@ export function SnippetCard({
     }
   };
 
-  const visibleComments = (comments ?? []).slice(0, 3);
-
   return (
-    <Card
-      className="shadow-sm"
-      aria-label={`Snippet card for ${snippet.title}`}
-    >
+    <Card className="rounded-2xl shadow-md hover:shadow-xl transition-all duration-200 bg-white flex flex-col justify-between">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between gap-3">
-          <span className="truncate">{snippet.title}</span>
-          <span
-            className="text-xs text-gray-500"
-            aria-label="Programming language"
-          >
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-lg font-semibold truncate">
+            {snippet.title}
+          </CardTitle>
+          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium">
             {snippet.language}
           </span>
-        </CardTitle>
-        <CardDescription className="text-xs">
-          {snippet.author?.name ?? "Anonymous"}
-        </CardDescription>
+        </div>
       </CardHeader>
 
-      <CardContent className="space-y-3">
-        <div>
-          <p className="font-medium text-sm mb-1">Recent comments</p>
-          {visibleComments.length === 0 ? (
-            <p className="text-xs text-gray-500">No comments yet.</p>
-          ) : (
-            <ul className="space-y-1">
-              {visibleComments.map((c) => (
-                <li key={c.id} className="text-sm">
-                  <span className="font-medium">
-                    {c.author?.name ?? "Anonymous"}:
-                  </span>{" "}
-                  {String(c.content)}
-                </li>
-              ))}
-            </ul>
-          )}
+      <CardContent>
+        {/* Code preview */}
+        <div className="relative">
+          <pre className="bg-gray-900 text-gray-100 p-3 rounded-lg text-xs max-h-28 overflow-hidden">
+            <code>{snippet.code}</code>
+          </pre>
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-gray-900 to-transparent rounded-b-lg" />
         </div>
+
+        {/* Recent comments */}
+        {comments?.length ? (
+          <div className="mt-4 space-y-2">
+            <p className="text-xs text-gray-500">Recent comments</p>
+            {comments.map((c) => (
+              <div
+                key={c.id}
+                className="bg-gray-50 border px-3 py-2 rounded-lg text-sm text-gray-700"
+              >
+                {c.content}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-400 italic mt-3">No comments yet.</p>
+        )}
       </CardContent>
 
-      <CardFooter className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      <CardFooter className="flex items-center justify-between pt-3">
+        <div className="flex gap-2">
           <Button
-            variant="ghost"
+            variant={isLiked ? "secondary" : "outline"}
             size="sm"
             onClick={toggleLike}
-            aria-label="Toggle like"
+            className="flex items-center gap-1"
           >
-            {isLiked ? "❤" : "🤍"} {likesCount}
+            {isLiked ? "❤️" : "🤍"} {likesCount}
           </Button>
 
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button variant="secondary" size="sm" aria-label="Add comment">
-                Add Comment
+              <Button size="sm" variant="outline">
+                + Comment
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -165,18 +161,13 @@ export function SnippetCard({
                 placeholder="Write your comment…"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                aria-label="Comment text"
               />
               {error && <p className="text-sm text-red-600">{error}</p>}
               <DialogButtons className="flex items-center justify-end gap-2">
                 <DialogClose asChild>
                   <Button variant="ghost">Cancel</Button>
                 </DialogClose>
-                <Button
-                  onClick={postComment}
-                  disabled={posting}
-                  aria-label="Post"
-                >
+                <Button onClick={postComment} disabled={posting}>
                   {posting ? "Posting…" : "Post"}
                 </Button>
               </DialogButtons>
@@ -184,11 +175,10 @@ export function SnippetCard({
           </Dialog>
         </div>
 
-        <Link
-          href={`/snippets/${snippet.id}`}
-          aria-label="View snippet details"
-        >
-          <Button size="sm">View Details</Button>
+        <Link href={`/snippets/${snippet.id}`}>
+          <Button size="sm" variant="default">
+            View Details
+          </Button>
         </Link>
       </CardFooter>
     </Card>

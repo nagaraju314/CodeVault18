@@ -1,24 +1,23 @@
+// app/snippets/[id]/page.tsx
 import { cookies } from "next/headers";
 import { SnippetViewer } from "./SnippetViewer";
+import { absoluteUrl } from "@/lib/absoluteUrl";
 
-export default async function SnippetDetailPage(props: {
-  params: Promise<{ id: string }>;
+export default async function SnippetDetailPage({
+  params,
+}: {
+  params: { id: string };
 }) {
-  const { id } = await props.params;
+  const { id } = await params;
   const cookieStore = await cookies();
 
-  const base = process.env.NEXT_PUBLIC_BASE_URL!;
-  const url = `${base}/api/snippets/${id}`;
+  const url = await absoluteUrl(`/api/snippets/${id}`);
   const res = await fetch(url, {
     cache: "no-store",
-    headers: {
-      Cookie: cookieStore.toString(),
-    },
+    headers: { Cookie: cookieStore.toString() },
   });
 
-  if (!res.ok) {
-    return <div>Snippet not found</div>;
-  }
+  if (!res.ok) return <div>Snippet not found</div>;
 
   const snippet = await res.json();
   return <SnippetViewer snippet={snippet} />;

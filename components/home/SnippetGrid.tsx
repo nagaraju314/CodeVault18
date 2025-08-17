@@ -1,19 +1,42 @@
 // components/home/SnippetGrid.tsx
-import { SnippetCard } from "@/components/snippets/SnippetCard";
+import { prisma } from "@/lib/prisma";
 import type { Snippet } from "@/types/snippet";
+import { SnippetCard } from "@/components/snippets/SnippetCard";
+import type { Prisma } from "@prisma/client";
 
+// Helper: fetch snippets with optional search query
 async function getSnippets(q?: string): Promise<Snippet[]> {
-  const base = process.env.NEXT_PUBLIC_BASE_URL!;
-  const url = new URL("/api/snippets", base);
-  if (q) url.searchParams.set("q", q);
+  const where: Prisma.SnippetWhereInput = q
+    ? {
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { code: { contains: q, mode: "insensitive" } },
+          { language: { contains: q, mode: "insensitive" } },
+          { tags: { has: q } },
+        ],
+      }
+    : {};
 
-  // Revalidate periodically so the stream stays fresh without hammering the DB
-  const res = await fetch(url.toString(), {
-    next: { revalidate: 60 }, // 60s ISR-style cache
+  const snippets = await prisma.snippet.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      language: true,
+      code: true,
+      tags: true,
+      createdAt: true,
+      likes: { select: { userId: true } },
+      comments: {
+        orderBy: { createdAt: "desc" },
+        take: 3,
+        select: { id: true, content: true, createdAt: true },
+      },
+    },
   });
 
-  if (!res.ok) return [];
-  return res.json();
+  return snippets as unknown as Snippet[];
 }
 
 export default async function SnippetGrid({

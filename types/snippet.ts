@@ -1,10 +1,8 @@
+// types/snippet.ts
 export interface Comment {
   id: string;
   content: string;
   createdAt: string;
-  author: {
-    name: string;
-  };
 }
 
 export interface Like {
@@ -19,7 +17,4 @@ export interface Snippet {
   tags?: string[];
   likes?: Like[];
   comments?: Comment[];
-  author?: {
-    name: string;
-  };
 }

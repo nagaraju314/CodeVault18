@@ -42,11 +42,11 @@ export default function SplashGate() {
               Login
             </Button>
             <Button
-              aria-label="Go to register"
+              aria-label="Go to SignUp"
               variant="secondary"
               onClick={() => router.push("/signup")}
             >
-              Register
+              SignUp
             </Button>
           </div>
         )}

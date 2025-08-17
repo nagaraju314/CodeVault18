@@ -5,17 +5,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { CopyButton } from "./CopyButton";
+import { ArrowLeft, Copy } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { Snippet, Comment } from "@/types/snippet";
 
 export function SnippetViewer({ snippet }: { snippet: Snippet }) {
   const router = useRouter();
+
   const [comments, setComments] = useState<Comment[]>(snippet.comments || []);
-  const [content, setContent] = useState<string>("");
+  const [content, setContent] = useState("");
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const copyCode = async () => {
+    await navigator.clipboard.writeText(snippet.code);
+  };
 
   const onPost = async () => {
     if (!content.trim()) return;
@@ -35,7 +39,6 @@ export function SnippetViewer({ snippet }: { snippet: Snippet }) {
           id: `temp-${Date.now()}`,
           content: content.trim(),
           createdAt: new Date().toISOString(),
-          author: { name: "You" },
         };
         setComments((prev) => [newItem, ...prev]);
         setContent("");
@@ -49,82 +52,75 @@ export function SnippetViewer({ snippet }: { snippet: Snippet }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-green-100 flex justify-center p-6">
-      <Card className="w-full max-w-4xl shadow-lg rounded-2xl border border-gray-200 overflow-hidden">
-        <CardHeader className="flex justify-between items-center border-b pb-3 bg-white">
-          <div className="flex items-center gap-2">
-            <Button
-              aria-label="Back to dashboard"
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/dashboard")}
-            >
-              <ArrowLeft className="w-5 h-5" />
+      <Card className="w-full max-w-3xl shadow-lg rounded-2xl border border-gray-200 overflow-hidden bg-white">
+        {/* Header */}
+        <CardHeader className="flex justify-between items-center border-b pb-3 bg-gray-50">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+              <ArrowLeft className="w-4 h-4" />
             </Button>
-            <CardTitle>{snippet.title}</CardTitle>
+            <CardTitle className="text-lg font-semibold truncate">
+              {snippet.title}
+            </CardTitle>
           </div>
+          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
+            {snippet.language}
+          </span>
         </CardHeader>
 
-        <CardContent className="space-y-4 mt-2">
-          <div className="text-gray-700 text-sm">
-            <div>
-              <span className="font-semibold">Language:</span>{" "}
-              {snippet.language}
-            </div>
-
-            {Array.isArray(snippet.tags) && snippet.tags.length > 0 && (
-              <div>
-                <span className="font-semibold">Tags:</span>{" "}
-                {snippet.tags.join(", ")}
-              </div>
-            )}
-            <div>
-              <span className="font-semibold">Likes:</span>{" "}
-              {snippet.likes?.length ?? 0}
-            </div>
+        {/* Code Block */}
+        <CardContent className="relative mt-4">
+          <div className="relative">
+            <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto text-sm max-h-64">
+              <code>{snippet.code}</code>
+            </pre>
+            <Button
+              size="icon"
+              variant="secondary"
+              className="absolute top-2 right-2"
+              onClick={copyCode}
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
           </div>
 
-          <div className="bg-zinc-900 text-zinc-100 rounded-lg p-4 font-mono relative">
-            <pre>{snippet.code}</pre>
-            <CopyButton code={snippet.code} />
-          </div>
+          {/* Comments Section */}
+          <div className="mt-6">
+            <h3 className="font-semibold mb-3">Comments</h3>
+            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+              {comments.length > 0 ? (
+                comments.map((c) => (
+                  <div
+                    key={c.id}
+                    className="bg-gray-50 border rounded-lg p-3 shadow-sm"
+                  >
+                    <p className="text-sm text-gray-800">{c.content}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(c.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-400 italic">No comments yet.</p>
+              )}
+            </div>
 
-          <section className="space-y-3" aria-label="Comments">
-            <h3 className="font-semibold">Comments</h3>
-            <div className="space-y-3">
+            {/* Add Comment */}
+            <div className="mt-5">
               <Textarea
-                rows={4}
-                placeholder="Add a helpful comment…"
+                rows={3}
+                placeholder="Write your comment…"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                aria-label="Write a comment"
               />
               {error && <p className="text-sm text-red-600">{error}</p>}
-              <div className="flex justify-end">
-                <Button
-                  onClick={onPost}
-                  disabled={posting}
-                  aria-label="Post comment"
-                >
-                  {posting ? "Posting…" : "Post Comment"}
+              <div className="flex justify-end mt-2">
+                <Button onClick={onPost} disabled={posting}>
+                  {posting ? "Posting…" : "Post"}
                 </Button>
               </div>
             </div>
-
-            {comments.length === 0 ? (
-              <p className="text-sm text-gray-500">No comments yet.</p>
-            ) : (
-              <ul className="space-y-2">
-                {comments.map((c) => (
-                  <li key={c.id} className="text-sm">
-                    <span className="font-medium">
-                      {c.author?.name ?? "Anonymous"}:
-                    </span>{" "}
-                    {String(c.content)}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          </div>
         </CardContent>
       </Card>
     </div>

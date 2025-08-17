@@ -8,50 +8,102 @@ import { Menu, Search, X } from "lucide-react";
 import { Button } from "../ui/button";
 
 const SEARCH_PLACEHOLDER = "Search snippets...";
+const STORAGE_KEY = "snippetSearchHistory";
 
 export default function NavbarContent() {
-  const [isOpen, setIsOpen] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
   const params = useSearchParams();
-  const [q, setQ] = useState(params?.get("q") || "");
+
+  const [q, setQ] = useState("");
   const [history, setHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Load history from localStorage on mount
+  // ✅ Load search history on mount
   useEffect(() => {
-    const stored = JSON.parse(
-      localStorage.getItem("snippetSearchHistory") || "[]"
-    );
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     setHistory(stored);
   }, []);
 
+  // ✅ Submit search
   const submitSearch = () => {
     const trimmed = q.trim();
     if (!trimmed) return;
 
-    const url = `/?q=${encodeURIComponent(trimmed)}`;
-    router.push(url);
+    // Push query to URL
+    router.push(`/?q=${encodeURIComponent(trimmed)}`);
 
-    // Save search to history
+    // Save search history (dedupe + max 5)
     const newHistory = [trimmed, ...history.filter((h) => h !== trimmed)].slice(
       0,
       5
-    ); // keep last 5
+    );
     setHistory(newHistory);
-    localStorage.setItem("snippetSearchHistory", JSON.stringify(newHistory));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
 
-    setQ(""); // clear input
+    // Clear input + close dropdowns
+    setQ("");
     setIsOpen(false);
     setShowHistory(false);
   };
 
+  // ✅ Select from history
   const handleSelectHistory = (value: string) => {
-    setQ(value);
+    router.push(`/?q=${encodeURIComponent(value)}`);
     setShowHistory(false);
-    const url = `/?q=${encodeURIComponent(value)}`;
-    router.push(url);
   };
+
+  // 🔎 Shared search input component (desktop + mobile)
+  const SearchBox = ({ mobile = false }: { mobile?: boolean }) => (
+    <div
+      className={`relative ${mobile ? "w-full" : "w-[400px]"}`}
+      role="search"
+      aria-label="Search snippets"
+    >
+      {!mobile && (
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+      )}
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && submitSearch()}
+        onFocus={() => setShowHistory(true)}
+        onBlur={() => setTimeout(() => setShowHistory(false), 150)} // allow click
+        type="text"
+        placeholder={SEARCH_PLACEHOLDER}
+        aria-label="Search snippets"
+        className={`w-full ${
+          mobile ? "pl-4 pr-20" : "pl-9 pr-20"
+        } py-2 rounded-lg border border-gray-300 text-black focus:outline-none focus:ring-2 focus:ring-blue-400`}
+      />
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={submitSearch}
+        aria-label="Submit search"
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-black px-3 py-1 rounded-md text-sm"
+      >
+        <Search className="w-4 h-4 mr-1" />
+        Search
+      </Button>
+
+      {/* History dropdown */}
+      {showHistory && history.length > 0 && (
+        <div className="absolute top-full mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-md z-50">
+          {history.map((item, i) => (
+            <button
+              key={i}
+              onMouseDown={() => handleSelectHistory(item)} // before blur
+              className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <nav className="px-21 py-2 flex items-center justify-between shadow-lg relative bg-white">
@@ -72,55 +124,13 @@ export default function NavbarContent() {
       </div>
 
       {/* Desktop search */}
-      <div
-        className="hidden md:flex flex-1 justify-center px-3 relative"
-        role="search"
-        aria-label="Search snippets"
-      >
-        <div className="relative w-[400px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-            onFocus={() => setShowHistory(true)}
-            onBlur={() => setTimeout(() => setShowHistory(false), 150)} // delay so click works
-            type="text"
-            placeholder={SEARCH_PLACEHOLDER}
-            aria-label="Search snippets"
-            className="w-full pl-9 pr-20 py-2 rounded-lg border border-gray-300 text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={submitSearch}
-            aria-label="Submit search"
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-black px-3 py-1 rounded-md text-sm"
-          >
-            <Search className="w-4 h-4 mr-1" />
-            Search
-          </Button>
-        </div>
-
-        {/* History dropdown */}
-        {showHistory && history.length > 0 && (
-          <div className="absolute top-full mt-1 w-[400px] bg-white border border-gray-300 rounded-lg shadow-md z-50">
-            {history.map((item, i) => (
-              <button
-                key={i}
-                onMouseDown={() => handleSelectHistory(item)} // use onMouseDown so it fires before blur
-                className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        )}
+      <div className="hidden md:flex flex-1 justify-center px-3">
+        <SearchBox />
       </div>
 
       {/* Right cluster */}
-      <div className="hidden md:flex items-center gap-3">
-        {session ? (
+      <div className="flex items-center gap-2">
+        {session && (
           <Button
             variant="secondary"
             className="ml-2"
@@ -128,19 +138,10 @@ export default function NavbarContent() {
           >
             Logout
           </Button>
-        ) : (
-          <>
-            <Link href="/login" aria-label="Login">
-              <Button>Login</Button>
-            </Link>
-            <Link href="/signup" aria-label="Sign up">
-              <Button variant="secondary">Sign Up</Button>
-            </Link>
-          </>
         )}
       </div>
 
-      {/* Mobile toggle */}
+      {/* Mobile menu toggle */}
       <div className="md:hidden">
         <button onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
           {isOpen ? <X size={28} /> : <Menu size={28} />}
@@ -150,46 +151,7 @@ export default function NavbarContent() {
       {/* Mobile dropdown */}
       {isOpen && (
         <div className="absolute top-full left-0 w-full bg-white shadow-md px-4 py-4 space-y-4 z-50 md:hidden">
-          <div
-            className="flex w-full items-center gap-2"
-            role="search"
-            aria-label="Search snippets"
-          >
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-              onFocus={() => setShowHistory(true)}
-              onBlur={() => setTimeout(() => setShowHistory(false), 150)}
-              type="text"
-              placeholder={SEARCH_PLACEHOLDER}
-              aria-label="Search snippets"
-              className="flex-1 px-4 py-2 rounded-lg text-black border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <Button
-              variant="secondary"
-              onClick={submitSearch}
-              aria-label="Submit search"
-            >
-              <Search className="w-4 h-4 mr-1" />
-              Search
-            </Button>
-          </div>
-
-          {/* History dropdown (mobile) */}
-          {showHistory && history.length > 0 && (
-            <div className="mt-2 w-full bg-white border border-gray-300 rounded-lg shadow-md z-50">
-              {history.map((item, i) => (
-                <button
-                  key={i}
-                  onMouseDown={() => handleSelectHistory(item)}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          )}
+          <SearchBox mobile />
 
           {session && (
             <Link href="/dashboard" onClick={() => setIsOpen(false)}>

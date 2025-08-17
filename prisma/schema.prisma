@@ -56,4 +56,6 @@ model Like {
   userId    String?  @db.ObjectId
   snippet   Snippet? @relation(fields: [snippetId], references: [id])
   snippetId String?  @db.ObjectId
+
+  @@unique([userId, snippetId], name: "userId_snippetId")
 }
