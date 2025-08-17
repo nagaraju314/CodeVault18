@@ -1,3 +1,4 @@
+// app/api/snippets/[id]/like/route.ts
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
@@ -5,38 +6,39 @@ import { NextResponse } from "next/server";
 
 export async function POST(
   _req: Request,
-  context: { params: { id: string } }  // 👈 fix type
+  { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = context.params;
+  const { id } = params;
 
+  // Create if not exists (idempotent like)
   await prisma.like.upsert({
     where: { userId_snippetId: { userId: session.user.id, snippetId: id } },
     create: { userId: session.user.id, snippetId: id },
     update: {},
   });
 
-  return NextResponse.json({ message: "Liked" });
+  return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
   _req: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = context.params;
+  const { id } = params;
 
   await prisma.like.deleteMany({
     where: { userId: session.user.id, snippetId: id },
   });
 
-  return NextResponse.json({ message: "Unliked" });
+  return NextResponse.json({ ok: true });
 }
