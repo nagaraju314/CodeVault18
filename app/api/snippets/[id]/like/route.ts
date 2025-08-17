@@ -5,9 +5,9 @@ import { NextResponse } from "next/server";
 
 export async function POST(
   _req: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }   // ✅ plain object
 ) {
-  const { id } = await context.params;
+  const { id } = params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -25,9 +25,9 @@ export async function POST(
 
 export async function DELETE(
   _req: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }   // ✅ plain object
 ) {
-  const { id } = await context.params;
+  const { id } = params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

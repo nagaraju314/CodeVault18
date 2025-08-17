@@ -1,5 +1,3 @@
-// app/snippets/[id]/page.tsx
-//updated
 import { cookies } from "next/headers";
 import { SnippetViewer } from "./SnippetViewer";
 import { absoluteUrl } from "@/lib/absoluteUrl";
@@ -7,9 +5,9 @@ import { absoluteUrl } from "@/lib/absoluteUrl";
 export default async function SnippetDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string }; // ✅ plain object
 }) {
-  const { id } = await params;
+  const { id } = params; // ✅ no await
 
   const cookieStore = await cookies();
   const url = await absoluteUrl(`/api/snippets/${id}`);

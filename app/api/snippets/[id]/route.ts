@@ -3,9 +3,9 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _req: Request,
-  context: { params: Promise<{ id: string }> } // ← matches your typing in the doc
+  { params }: { params: { id: string } }   // ✅ plain object
 ) {
-  const { id } = await context.params;
+  const { id } = params;
 
   try {
     const snippet = await prisma.snippet.findUnique({
