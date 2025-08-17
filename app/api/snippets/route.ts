@@ -1,3 +1,4 @@
+// app/api/snippets/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import clientPromise from "@/lib/mongodb";
@@ -6,19 +7,24 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import type { Prisma } from "@prisma/client";
 
+
 const cacheHeaders = {
   "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
 };
 
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
+
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
+
   try {
     const { title, code, language, tags } = await req.json();
+
 
     if (!title || !code || !language) {
       return NextResponse.json(
@@ -26,6 +32,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
 
     const snippet = await prisma.snippet.create({
       data: {
@@ -37,6 +44,7 @@ export async function POST(req: Request) {
       },
     });
 
+
     return NextResponse.json(snippet, { status: 201 });
   } catch (error) {
     console.error("Error creating snippet:", error);
@@ -47,11 +55,13 @@ export async function POST(req: Request) {
   }
 }
 
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q")?.trim();
     const authorId = searchParams.get("authorId")?.trim();
+
 
     const where: Prisma.SnippetWhereInput = {};
     if (q) {
@@ -64,6 +74,7 @@ export async function GET(req: Request) {
     }
     if (authorId) where.authorId = authorId;
 
+
     const snippets = await prisma.snippet.findMany({
       where: Object.keys(where).length ? where : undefined,
       include: {
@@ -73,27 +84,27 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
+
     // get authors from MongoDB
     const authorIds = [
-      ...new Set(
-        snippets.map((s) => s.authorId).filter((id): id is string => Boolean(id))
-      ),
+      ...new Set(snippets.map((s) => s.authorId).filter((id): id is string => Boolean(id))),
     ];
+
 
     const client = await clientPromise;
     const db = client.db();
+
 
     const authors = await db
       .collection("users")
       .find({
         _id: {
-          $in: authorIds
-            .filter(ObjectId.isValid)
-            .map((id) => new ObjectId(id)),
+          $in: authorIds.filter(ObjectId.isValid).map((id) => new ObjectId(id)),
         },
       })
       .project({ _id: 1, name: 1, email: 1 })
       .toArray();
+
 
     const snippetsWithAuthors = snippets.map((s) => ({
       ...s,
@@ -101,6 +112,7 @@ export async function GET(req: Request) {
         ? authors.find((a) => a._id.toString() === s.authorId) || null
         : null,
     }));
+
 
     return new NextResponse(JSON.stringify(snippetsWithAuthors), {
       headers: { "Content-Type": "application/json", ...cacheHeaders },
