@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(
   req: Request,
-  { params }: { params: Record<string, string> }
+  { params }: { params: { id: string } }   // ✅ Next.js-compatible
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
